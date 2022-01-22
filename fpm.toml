@@ -1,0 +1,11 @@
+name = "fortran-libc"
+version = "0.0.0"
+license = "unlicense"
+author = "Ivan Pribec"
+
+[build]
+auto-executables = true
+auto-tests = true
+auto-examples = true
+[install]
+library = false

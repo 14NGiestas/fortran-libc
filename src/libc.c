@@ -29,7 +29,7 @@ clock_t get_clocks_per_sec(){
 }
 
 void set_tm(struct tm *timeptr, int hour, int min, int sec, int year, int mon, int mday){
-    //struct tm *timeptr = (struct tm *)t;  
+    //struct tm *timeptr = (struct tm *)t;
     timeptr->tm_hour = hour;
     timeptr->tm_min = min;
     timeptr->tm_sec = sec;
