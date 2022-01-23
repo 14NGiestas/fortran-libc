@@ -5,121 +5,12 @@ program test_libc
 
     implicit none
 
-    !
-    ! <time.h>
-    !
-    ! call mktime_example ! Expects user input
-    call gmtime_example
-    call localtime_example
-    call strftime_example
-
-    !
-    ! <errno.h>
-    !
     call strerror_example
-    !
-    ! <stdlib.h>
-    ! call rand_example
+    call rand_example   ! Expects user input
     call srand_example
     call qsort_example
 
 contains
-
-
-    subroutine mktime_example
-        use iso_fortran_env, only: output_unit, input_unit
-        type(c_time_t), target :: rawtime, thattime
-        type(c_tm_t),   target :: timeinfo
-        integer(c_int) :: year, month, day
-        integer(c_int), pointer :: itm(:)
-        character(len=9) :: weekday(0:6) = [character(len=9) :: "Sunday","Monday","Tuesday",&
-            "Wednesday","Thursday","Friday","Saturday"]
-
-        write(output_unit,*) "mktime example"
-
-        write(output_unit,"(A)",advance='no') "Enter year: "
-        read(input_unit,*) year
-        write(output_unit,"(A)",advance='no') "Enter month: "
-        read(input_unit,*) month
-        write(output_unit,"(A)",advance='no') "Enter day: "
-        read(input_unit,*) day
-
-        rawtime = time(rawtime)
-        timeinfo = localtime(c_loc(rawtime))
-        !call c_f_pointer(timeinfo,itm,[9])
-        itm(6) = year - 1900
-        itm(5) = month - 1
-        itm(4) = day
-
-        thattime = mktime(timeinfo)
-
-        write(output_unit,"(A,A)") "That day is a ", weekday(itm(7))
-
-
-        rawtime = time(rawtime)
-        timeinfo = localtime(rawtime)
-        !call c_f_pointer(timeinfo,itm,[9])
-        itm(6) = year - 1900
-        itm(5) = month - 1
-        itm(4) = day
-
-        thattime = mktime(timeinfo)
-        write(output_unit,"(A,A)") "That day is a ", weekday(itm(7))
-
-    end subroutine
-
-
-
-    subroutine gmtime_example
-        type(c_time_t), target :: rawtime
-        type(c_time_t) :: frawtime
-        type(c_tm_t) :: ptm, fptm
-        integer(c_int), pointer :: itm(:)
-        integer(c_int), parameter :: mst = -7, utc = 0, cct = 8
-
-        write(*,*) new_line('a')//"gmtime_example"
-
-        rawtime = time(rawtime)
-        frawtime = time(frawtime)
-
-        ptm = gmtime(c_loc(rawtime))
-        fptm = gmtime(frawtime)
-        print*, ptm
-
-        !call c_f_pointer(ptm,itm,[11])
-        write(*,*) "Current time around the world:"
-        write(*,"(A,I2,A1,I2)") "Phoenix, AZ (U.S.) :  ", mod(itm(3)+MST,24), ":", itm(2)
-        write(*,"(A,I2,A1,I2)") "Reykjavik (Iceland) : ", mod(itm(3)+UTC,24), ":", itm(2)
-        write(*,"(A,I2,A1,I2)") "Beijing (China) :     ", mod(itm(3)+CCT,24), ":", itm(2)
-
-        !call c_f_pointer(fptm,itm,[11])
-        write(*,*) "Current time around the world:"
-        write(*,"(A,I2,A1,I2)") "Phoenix, AZ (U.S.) :  ", mod(itm(3)+MST,24), ":", itm(2)
-        write(*,"(A,I2,A1,I2)") "Reykjavik (Iceland) : ", mod(itm(3)+UTC,24), ":", itm(2)
-        write(*,"(A,I2,A1,I2)") "Beijing (China) :     ", mod(itm(3)+CCT,24), ":", itm(2)
-    end subroutine
-
-
-    subroutine strftime_example
-        type(c_time_t), target :: rawtime
-        type(c_tm_t), target :: timeinfo
-
-        character(len=80) :: buffer
-        integer(c_size_t) :: ret
-
-        write(*,*)  new_line('a')//"strftime_example"
-
-        rawtime = time(rawtime)
-        timeinfo = localtime(c_loc(rawtime))
-        ! timeinfo = localtime(rawtime)
-        ret = c_strftime(buffer,80_c_size_t,"Now it's %I:%M%p."//c_null_char, c_loc(timeinfo))
-        write(*,*) buffer(1:ret)
-
-        rawtime = time()
-        timeinfo = localtime(rawtime)
-        ret = c_strftime(buffer,80_c_size_t,"Now it's %I:%M%p."//c_null_char, c_loc(timeinfo))
-        write(*,*) buffer(1:ret)
-    end subroutine
 
 
     subroutine strerror_example

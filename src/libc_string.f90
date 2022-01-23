@@ -14,11 +14,15 @@ module libc_string
         end function
 
         type(c_ptr) &
-        function strerror(errnum) bind(c,name='strerror')
+        function c_strerror(errnum) bind(c,name='strerror')
             import c_ptr, c_int
             integer(c_int), intent(in), value :: errnum
         end function
 
+    end interface
+
+    interface strerror
+        procedure :: f_strerror
     end interface
 
     interface c_f_string
@@ -27,6 +31,16 @@ module libc_string
     end interface
 
 contains
+
+    function f_strerror(errnum) result(res)
+        integer(c_int), intent(in) :: errnum
+        character(:), allocatable :: res
+        type(c_ptr) :: c_string
+
+        c_string = c_strerror(errnum)
+        res = c_f_string(c_string)
+    end function
+
 
     pure function c_f_string_array(c_string) result(f_string)
         character(c_char), intent(in)  :: c_string(:)

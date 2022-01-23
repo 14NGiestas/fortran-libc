@@ -22,14 +22,11 @@ module libc_time
         procedure :: c_tm_t_init_array
     end interface
 
+    ! https://stackoverflow.com/questions/3465517/what-is-size-of-the-time-variable-in-c-programming#3465546
     integer, parameter :: c_time_t  = c_long !! clock_t is just a macro/wrapper to a c_long
     integer, parameter :: c_clock_t = c_long !! time_t is just a macro/wrapper to a c_long
 
     interface
-
-        !-------------------
-        ! Time manipulation
-        !-------------------
 
         ! clock_t clock (void);
         function c_clock() result(res) bind(c,name='clock')
@@ -38,17 +35,18 @@ module libc_time
             integer(c_clock_t) :: res
         end function
 
-        ! Clock ticks per second
-        ! This macro evaluates to an expression of type clock_t.
+        ! custom: see libc.c
         function get_clocks_per_sec() result(res) bind(c,name='get_clocks_per_sec')
+            !! Clock ticks per second
+            !! This macro evaluates to an expression of type clock_t.
             import c_ptr, c_clock_t
             integer(c_clock_t) :: res
         end function
 
 
-        ! Return difference between two times
         ! double difftime (time_t end, time_t beginning);
         function c_difftime(end, beginning) result(res) bind(c,name='difftime')
+            !! Return difference between two times
             import c_double, c_time_t
             integer(c_time_t), value :: end
                 !! Higher bound of the time interval whose length is calculated.
@@ -68,9 +66,9 @@ module libc_time
                 !! Pointer to a tm structure that contains a calendar time broken down into its components
         end function
 
-        ! Get current time
         ! time_t time (time_t* timer);
         type(c_ptr) function c_time(timer) bind(c,name='time')
+            !! Get current time
             import c_ptr
             type(c_ptr), value :: timer
         end function
@@ -80,10 +78,6 @@ module libc_time
             integer(c_time_t), optional :: timer
         end function
 
-        !-----------------
-        ! Time Conversion
-        !-----------------
-
         ! char* asctime (const struct tm * timeptr);
         function c_asctime(timeptr) result(carr) bind(c,name='asctime')
             !! Convert tm structure to string
@@ -92,15 +86,12 @@ module libc_time
             type(c_ptr) :: carr
         end function
 
-        ! Convert time_t to tm as UTC time
         ! struct tm * gmtime (const time_t * timer);
-        type(c_ptr) function c_gmtime(timer) bind(c,name='gmtime')
+        type(c_ptr) &
+        function c_gmtime(timer) bind(c,name='gmtime')
+            !! Convert time_t to tm as UTC time
             import c_ptr
             type(c_ptr), intent(in), value :: timer
-        end function
-        type(c_tm_t) function f_gmtime(timer) bind(c,name='gmtime')
-            import c_ptr, c_time_t, c_tm_t
-            integer(c_time_t) :: timer
         end function
 
         ! struct tm * localtime (const time_t * timer)
@@ -137,7 +128,6 @@ module libc_time
             type(c_ptr), value :: tm
             type(c_ptr) :: res
         end function
-
     end interface
 
     interface clock
@@ -149,11 +139,6 @@ module libc_time
         procedure :: f_time
     end interface
 
-    interface gmtime
-        procedure :: c_gmtime
-        procedure :: f_gmtime
-    end interface
-
     interface mktime
         procedure :: c_mktime
         procedure :: f_mktime
@@ -161,6 +146,11 @@ module libc_time
 
     interface difftime
         procedure :: c_difftime
+    end interface
+
+    interface gmtime
+        procedure :: c_gmtime
+        procedure :: f_gmtime
     end interface
 
     interface localtime
@@ -178,7 +168,35 @@ module libc_time
         procedure :: f_strptime
     end interface
 
+    interface strftime
+        procedure :: c_strftime
+        procedure :: f_strftime
+    end interface
+
 contains
+
+    ! size_t strftime (char* ptr, size_t maxsize, const char* format,
+    !                  const struct tm* timeptr );
+    function f_strftime(ptr, maxsize, format, timeptr) result(res)
+        !! Format time as string
+        character(*),      intent(out) :: ptr
+        integer,           intent(in)  :: maxsize
+        character(*),      intent(in)  :: format
+        type(c_tm_t), target :: timeptr
+        integer(c_size_t) :: res
+        res = c_strftime(ptr, int(maxsize,c_size_t), format//c_null_char, c_loc(timeptr))
+    end function
+
+    ! struct tm * gmtime (const time_t * timer);
+    function f_gmtime(timer) result(res)
+        integer(c_time_t), target :: timer
+        type(c_tm_t), pointer :: f_ptr
+        type(c_tm_t) :: res
+        type(c_ptr) :: res_ptr
+        res_ptr = c_gmtime(c_loc(timer))
+        call c_f_pointer(res_ptr, f_ptr)
+        res = f_ptr
+    end function
 
     ! time_t mktime (struct tm * timeptr);
     function f_mktime(timeptr)
@@ -189,13 +207,15 @@ contains
     end function
 
     ! struct tm * localtime (const time_t * timer)
-    function f_localtime(timer)
+    function f_localtime(timer) result(res)
         !! Convert time_t to tm as local time
         integer(c_time_t), intent(in), target :: timer
-        type(c_tm_t), pointer :: f_localtime
-        type(c_ptr) :: res_ptr
+        type(c_tm_t), pointer :: f_ptr
+        type(c_tm_t)          :: res
+        type(c_ptr)           :: res_ptr
         res_ptr = c_localtime(c_loc(timer))
-        call c_f_pointer(res_ptr, f_localtime)
+        call c_f_pointer(res_ptr, f_ptr)
+        res = f_ptr
     end function
 
     ! char* asctime (const struct tm * timeptr);

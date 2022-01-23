@@ -9,19 +9,6 @@ module libc
 
 contains
 
-    function fstrerror(errnum) result(res)
-        integer(c_int), intent(in) :: errnum
-        character(len=:,kind=c_char), pointer :: f_str
-        character(len=:,kind=c_char), allocatable :: res
-        integer(c_int) :: len
-        type(c_ptr) :: c_str
-
-        c_str = strerror(errnum)
-        len = c_strlen(c_str)
-        call c_f_pointer(c_str,f_str)
-        res = f_str(1:len-1)
-    end function
-
 
 !     function cmktime(timeptr) result(res)
 !         type(c_tm_t), intent(in) :: timeptr
