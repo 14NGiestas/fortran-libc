@@ -306,6 +306,8 @@ contains
         integer(c_int) :: count
         integer :: i
 
+        print '("> rand example")'
+
         call system_clock(count)
         call c_srand(count)
 
