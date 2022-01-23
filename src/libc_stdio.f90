@@ -10,4 +10,17 @@ module libc_stdio
             character(kind=c_char) :: str(*)
         end subroutine
     end interface
+
+    interface perror
+        procedure :: c_perror
+        procedure :: f_perror
+    end interface
+
+contains
+
+    subroutine f_perror(str)
+        character(*) :: str
+        call c_perror(str // c_null_char)
+    end subroutine
+
 end module

@@ -13,6 +13,11 @@ program test_libc
     call asctime_example
     call gmtime_example
     call memory_example
+    call strerror_example
+    call srand_example
+    call rand_example([5,7,4,1,2,3])
+    call qsort_example
+
 
 contains
 
@@ -272,4 +277,82 @@ contains
         if (  associated(b))     error stop "Assertion failed"
     end subroutine
 
+    subroutine strerror_example
+        integer(c_int) :: i
+
+        print '("> strerror example")'
+
+        i = test_strerror()
+        print '("The following error occurred: ",A)', strerror(get_errno())
+        call perror("The following error occurred")
+    end subroutine
+
+    subroutine srand_example
+        integer(c_int) :: count
+        print '("> srand example")'
+
+        call c_srand(1)
+        print '("First number: ",i0)', mod(c_rand(),100)
+        call system_clock(count)
+        call c_srand(count)
+        print '("Random number: ",i0)', mod(c_rand(),100)
+        call c_srand(1)
+        print '("Again the first number: ",i0)', mod(c_rand(),100)
+    end subroutine
+
+    subroutine rand_example(guesses)
+        integer, intent(in), optional :: guesses(:)
+        integer(c_int) :: secret, guess
+        integer(c_int) :: count
+        integer :: i
+
+        call system_clock(count)
+        call c_srand(count)
+
+        secret = mod(c_rand(),10) + 1
+
+        i = 0
+        do
+            if (.not. present(guesses)) then
+                write(*,'(A)',advance='no') "Guess the number (1 to 10): "
+                read(*,*) guess
+            else
+                i = i + 1
+                guess = guesses(i)
+            end if
+            if (secret < guess) then
+                write(*,*) "The secret number is lower"
+            else if (secret > guess) then
+                write(*,*) "The secret number is higher"
+            end if
+
+            if (secret == guess) exit
+            if (present(guesses)) then
+                if (i == size(guesses)) then
+                    write(*,*) "You failed!"
+                    return
+                end if
+            end if
+        end do
+
+        write(*,*) "Congratulations!"
+    end subroutine
+
+    integer(c_int) function compare(a,b) bind(c)
+        integer(c_int), intent(in) :: a, b
+        compare = a - b
+    end function
+
+    ! see also https://stackoverflow.com/questions/20941575/sorting-in-fortran-undefined-reference-to-qsort
+    subroutine qsort_example
+        integer(c_int), target :: values(6)
+        type(c_ptr) :: ptr
+
+        print '("> qsort example")'
+
+        values = [40, 10, 100, 90, 20, 25]
+        write(*,"(6(I0,:,X))") values
+        call c_qsort(c_loc(values(1)),6_c_size_t,c_sizeof(values(1)),c_funloc(compare))
+        write(*,"(6(I0,:,X))") values
+    end subroutine
 end program
